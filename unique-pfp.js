@@ -3,6 +3,11 @@ import seedrandom from 'seedrandom';
 
 const usernameInput = document.querySelector('.username');
 const canvas = document.querySelector('.pfp');
+const imageSaver = document.querySelector('.image-saver');
+
+imageSaver.addEventListener('click', () => {
+  imageSaver.href = canvas.toDataURL('image/png');
+});
 
 function debounce(func, delay) {
   let timer;
@@ -30,11 +35,7 @@ function updatePfp(username) {
 
 function drawPfp(canvas, rng) {
   function genColor() {
-    return [
-      Math.floor(rng() * 255),
-      Math.floor(rng() * 255),
-      Math.floor(rng() * 255),
-    ];
+    return [Math.floor(rng() * 255), Math.floor(rng() * 255), Math.floor(rng() * 255)];
   }
 
   const paletteSize = 3;
