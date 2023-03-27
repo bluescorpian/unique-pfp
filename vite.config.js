@@ -5,7 +5,8 @@ export default defineConfig(({ command, mode }) => {
 
   if (mode === 'gh-pages') {
     return {
-      baseConfig
+      ...baseConfig,
+      base: 'unique-pfp',
     };
   } else return baseConfig;
 });
