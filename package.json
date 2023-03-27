@@ -13,7 +13,6 @@
   "license": "ISC",
   "dependencies": {
     "canvas": "^2.11.0",
-    "crypto-js": "^4.1.1",
     "seedrandom": "^3.0.5",
     "vite": "^4.2.1",
     "vite-plugin-singlefile": "^0.13.3"

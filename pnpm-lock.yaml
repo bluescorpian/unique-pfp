@@ -2,14 +2,12 @@ lockfileVersion: 5.4
 
 specifiers:
   canvas: ^2.11.0
-  crypto-js: ^4.1.1
   seedrandom: ^3.0.5
   vite: ^4.2.1
   vite-plugin-singlefile: ^0.13.3
 
 dependencies:
   canvas: 2.11.0
-  crypto-js: 4.1.1
   seedrandom: 3.0.5
   vite: 4.2.1
   vite-plugin-singlefile: 0.13.3_vite@4.2.1
@@ -309,10 +307,6 @@ packages:
 
   /console-control-strings/1.1.0:
     resolution: {integrity: sha512-ty/fTekppD2fIwRvnZAVdeOiGd1c7YXEixbgJTNzqcxJWKQnjJ/V1bNEEE6hygpM3WjwHFUVK6HTjWSzV4a8sQ==}
-    dev: false
-
-  /crypto-js/4.1.1:
-    resolution: {integrity: sha512-o2JlM7ydqd3Qk9CA0L4NL6mTzU2sdx96a+oOfPu8Mkl/PK51vSyoi8/rQ8NknZtk44vq15lmhAj9CIAGwgeWKw==}
     dev: false
 
   /debug/4.3.4:

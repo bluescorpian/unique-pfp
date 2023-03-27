@@ -1,4 +1,3 @@
-import sha256 from 'crypto-js/sha256';
 import seedrandom from 'seedrandom';
 
 const usernameInput = document.querySelector('.username');
@@ -21,14 +20,25 @@ function debounce(func, delay) {
 const deounceUpdatePfp = debounce(() => updatePfp(usernameInput.value), 200);
 
 usernameInput.addEventListener('input', deounceUpdatePfp);
-updatePfp('');
+drawPfp(canvas, 0); // default profile
+
+function hashStr(str) {
+  let hash = 0;
+  if (str.length === 0) {
+    return hash;
+  }
+  for (let i = 0; i < str.length; i++) {
+    let char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash;
+}
 
 function updatePfp(username) {
-  const hash = sha256(username);
+  const hash = hashStr(username);
 
-  const hashNumber = parseInt(hash.toString(), 16);
-
-  const rng = seedrandom(hashNumber);
+  const rng = seedrandom(hash);
 
   drawPfp(canvas, rng);
 }
