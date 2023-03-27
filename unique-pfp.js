@@ -20,7 +20,7 @@ function debounce(func, delay) {
 const deounceUpdatePfp = debounce(() => updatePfp(usernameInput.value), 200);
 
 usernameInput.addEventListener('input', deounceUpdatePfp);
-drawPfp(canvas, 0); // default profile
+updatePfp(''); // default profile
 
 function hashStr(str) {
   let hash = 0;
