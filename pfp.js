@@ -40,7 +40,7 @@ export function drawVoronoiPfp(ctx, height, width, rng, mode = 'euclidean') {
 	const points = new Set();
 
 	// generate points
-	for (let i = 0; i < 50; i++) {
+	for (let i = 0; i < rng() * 30 + 30; i++) {
 		const point = {
 			x: rng() * width,
 			y: rng() * height,
