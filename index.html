@@ -1,91 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Generate unique profile pictures based on your username." />
-    <meta name="keywords" content="profile picture, generator, unique, personalized, username, open-source" />
-    <meta name="author" content="bluescorpian" />
-    <meta property="og:title" content="Unique Profile Picture Generator" />
-    <meta property="og:description" content="Generate unique profile pictures based on your username." />
-    <meta property="og:image" content="https://bluescorpian.github.io/unique-pfp/favicon.png" />
-    <meta property="og:url" content="https://bluescorpian.github.io/unique-pfp/" />
-    <meta property="og:type" content="website" />
-    <meta name="theme-color" content="#f1f1f1" />
-    <link rel="icon" type="image/x-icon" href="/favicon.png" />
-    <title>Unique PFP</title>
-    <script defer async type="module" src="unique-pfp.js"></script>
-    <style>
-      * {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue';
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: #f1f1f1;
 
-        display: flex; /* flex for the footer */
-        flex-direction: column;
-        height: 100vh;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Generate unique profile pictures based on your username." />
+  <meta name="keywords" content="profile picture, generator, unique, personalized, username, open-source" />
+  <meta name="author" content="bluescorpian" />
+  <meta property="og:title" content="Unique Profile Picture Generator" />
+  <meta property="og:description" content="Generate unique profile pictures based on your username." />
+  <meta property="og:image" content="https://bluescorpian.github.io/unique-pfp/favicon.png" />
+  <meta property="og:url" content="https://bluescorpian.github.io/unique-pfp/" />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#f1f1f1" />
+  <!-- External Resources -->
+  <link rel="icon" type="image/x-icon" href="/favicon.png" />
+  <title>Unique PFP</title>
+  <script defer async type="module" src="index.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
 
-      .container {
-        flex: 1;
+<body>
+  <div class="container">
+    <a class="image-saver" download="pfp.png" title="Save pfp" href="#"><canvas class="pfp" width="500"
+        height="500"></canvas></a>
+    <input class="username" type="text" placeholder="Username" spellcheck="false" />
+  </div>
+  <select name="mode" id="mode">
+    <option value="grid">Grid</option>
+    <option value="voronoi-euc">Voronoi Euclidean</option>
+    <option value="voronoi-man">Voronoi Manhattan</option>
+  </select>
+  <footer>Made by <a href="https://github.com/bluescorpian">bluescorpian</a></footer>
+</body>
 
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-
-        margin-top: -10vh;
-      }
-
-      .pfp {
-        width: 200px;
-        height: 200px;
-        border: 2px white solid;
-        box-shadow: 0 0 5px black;
-        border-radius: 50%;
-        background-color: #ddd;
-        margin-bottom: 20px;
-      }
-
-      .username {
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-        font-size: 20px;
-        width: 200px;
-        text-align: center;
-      }
-
-      footer {
-        align-self: right;
-        text-align: right;
-        margin: 5px;
-        color: gray;
-      }
-
-      footer a {
-        font-weight: bold;
-        text-decoration: none;
-      }
-      footer a,
-      footer a:visited,
-      footer a:hover,
-      footer a:active {
-        color: inherit;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <a class="image-saver" download="pfp.png" title="Save pfp" href="#"><canvas class="pfp" width="500" height="500"></canvas></a>
-      <input class="username" type="text" placeholder="Username" spellcheck="false" />
-    </div>
-    <footer>Made by <a href="https://github.com/bluescorpian">bluescorpian</a></footer>
-  </body>
 </html>
