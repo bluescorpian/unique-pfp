@@ -47,12 +47,16 @@ jobs:
                   sudo apt-get update
                   sudo apt-get install -y libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev librsvg2-dev libpixman-1-dev pkg-config build-essential
 
-            - uses: pnpm/action-setup@v2
+            - uses: pnpm/action-setup@v4
               name: Install pnpm
               id: pnpm-install
               with:
                   version: 7
+                  standalone: true
                   run_install: false
+
+            - name: Verify pnpm
+              run: pnpm --version
 
             - name: Get pnpm store directory
               id: pnpm-cache
