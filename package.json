@@ -1,19 +1,19 @@
 {
-  "name": "pfp-hash",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "canvas": "^2.11.0",
-    "seedrandom": "^3.0.5",
-    "vite": "^4.2.1"
-  }
+	"name": "unique-pfp",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"canvas": "^2.11.0",
+		"seedrandom": "^3.0.5",
+		"vite": "^4.2.1"
+	}
 }
