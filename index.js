@@ -7,8 +7,15 @@ const canvas = document.querySelector('.pfp');
 const imageSaver = document.querySelector('.image-saver');
 const modeSelect = document.getElementById('mode');
 
+const OUTPUT_RENDER_SIZE = 1000;
+const QUICK_RENDER_SIZE = 250;
+const SUPER_SAMPLE_RENDER_SIZE = 2000; // 2x downsampling to 1000px output
+const SUPER_SAMPLE_DELAY_MS = 500;
+const INPUT_DEBOUNCE_MS = 50;
+
 let mode = modeSelect.value;
 let username = '';
+let supersampleTimeout;
 
 modeSelect.addEventListener('change', () => {
 	mode = modeSelect.value;
@@ -31,7 +38,7 @@ function debounce(func, delay) {
 const deounceUpdatePfp = debounce(() => {
 	username = usernameInput.value;
 	updatePfp();
-}, 200);
+}, INPUT_DEBOUNCE_MS);
 
 usernameInput.addEventListener('input', deounceUpdatePfp);
 updatePfp(); // default profile
@@ -49,14 +56,9 @@ function hashStr(str) {
 	return hash;
 }
 
-function updatePfp() {
-	const hash = hashStr(username);
-
-	const rng = seedrandom(hash);
-
-	const ctx = canvas.getContext('2d');
-
-	const params = [ctx, canvas.height, canvas.width, rng];
+function renderPfp(ctx, size, seed) {
+        const rng = seedrandom(seed);
+        const params = [ctx, size, size, rng];
 
 	if (mode === 'grid') {
 		drawGridPfp(...params);
@@ -65,4 +67,32 @@ function updatePfp() {
 	} else if (mode === 'voronoi-man') {
 		drawVoronoiPfp(...params, 'nanhattan');
 	}
+}
+
+function updatePfp() {
+        const seed = hashStr(username);
+        canvas.width = OUTPUT_RENDER_SIZE;
+        canvas.height = OUTPUT_RENDER_SIZE;
+
+        renderToCanvas(QUICK_RENDER_SIZE, seed);
+
+        clearTimeout(supersampleTimeout);
+        supersampleTimeout = setTimeout(() => {
+                renderToCanvas(SUPER_SAMPLE_RENDER_SIZE, seed);
+        }, SUPER_SAMPLE_DELAY_MS);
+}
+
+function renderToCanvas(size, seed) {
+        const scratchCanvas = document.createElement('canvas');
+        scratchCanvas.width = size;
+        scratchCanvas.height = size;
+        const scratchCtx = scratchCanvas.getContext('2d');
+
+        renderPfp(scratchCtx, size, seed);
+
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(scratchCanvas, 0, 0, canvas.width, canvas.height);
 }
