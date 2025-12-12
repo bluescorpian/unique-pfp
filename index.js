@@ -1,6 +1,6 @@
 import seedrandom from "seedrandom";
 
-import { drawGridPfp, drawVoronoiPfp } from "./pfp";
+import { drawGridPfp, drawVoronoiPfp, RENDER_ABORTED_ERROR } from "./pfp";
 
 const usernameInput = document.querySelector(".username");
 const canvas = document.querySelector(".pfp");
@@ -8,15 +8,22 @@ const imageSaver = document.querySelector(".image-saver");
 const modeSelect = document.getElementById("mode");
 
 const OUTPUT_RENDER_SIZE = 1000;
-const QUICK_RENDER_SIZE = 250;
-const SUPER_SAMPLE_RENDER_SIZE = 2000; // 2x downsampling to 1000px output
-const DOWNSAMPLE_BLUR_PX = 3;
-const SUPER_SAMPLE_DELAY_MS = 500;
-const INPUT_DEBOUNCE_MS = 50;
+const QUICK_RENDER_SIZE = 100;
+const SUPER_SAMPLE_RENDER_SIZE = 2000;
+const SUPER_SAMPLE_DELAY_MS = 100;
+const INPUT_DEBOUNCE_MS = 10;
+const ASYNC_RENDER_THRESHOLD = 750;
+const USE_ASYNC_FOR_SMALL_RENDERS = false;
+const VORONOI_FRAME_BUDGET_MS = 16;
 
 let mode = modeSelect.value;
 let username = "";
 let supersampleTimeout;
+const RENDER_KEYS = {
+	quick: "quick",
+	supersample: "supersample",
+};
+const renderControllers = new Map();
 
 modeSelect.addEventListener("change", () => {
 	mode = modeSelect.value;
@@ -57,50 +64,135 @@ function hashStr(str) {
 	return hash;
 }
 
-function renderPfp(ctx, size, seed) {
+function shouldUseAsyncRendering(size) {
+	if (size >= ASYNC_RENDER_THRESHOLD) {
+		return true;
+	}
+	return USE_ASYNC_FOR_SMALL_RENDERS;
+}
+
+function cancelRender(key) {
+	const controller = renderControllers.get(key);
+	if (controller) {
+		controller.abort();
+		renderControllers.delete(key);
+	}
+}
+
+function buildRenderOptions(size, controller) {
+	return {
+		asyncRender: shouldUseAsyncRendering(size),
+		frameBudgetMs: VORONOI_FRAME_BUDGET_MS,
+		signal: controller.signal,
+	};
+}
+
+function createAbortController() {
+	if (typeof AbortController === "undefined") {
+		return {
+			signal: { aborted: false },
+			abort() {
+				this.signal.aborted = true;
+			},
+		};
+	}
+	return new AbortController();
+}
+
+function isAbortError(error) {
+	if (!error) {
+		return false;
+	}
+	return error.name === RENDER_ABORTED_ERROR || error.name === "AbortError";
+}
+
+async function renderPfp(ctx, size, seed, selectedMode, renderOptions = {}) {
 	const rng = seedrandom(seed);
 	const params = [ctx, size, size, rng];
 
-	if (mode === "grid") {
+	if (selectedMode === "grid") {
 		drawGridPfp(...params);
-	} else if (mode === "voronoi-euc") {
-		drawVoronoiPfp(...params, "euclidean");
-	} else if (mode === "voronoi-man") {
-		drawVoronoiPfp(...params, "nanhattan");
+	} else if (selectedMode === "voronoi-euc") {
+		await drawVoronoiPfp(...params, "euclidean", renderOptions);
+	} else if (selectedMode === "voronoi-man") {
+		await drawVoronoiPfp(...params, "nanhattan", renderOptions);
 	}
 }
 
 function updatePfp() {
+	cancelRender(RENDER_KEYS.quick);
+	cancelRender(RENDER_KEYS.supersample);
 	const seed = hashStr(username);
 	canvas.width = OUTPUT_RENDER_SIZE;
 	canvas.height = OUTPUT_RENDER_SIZE;
 
-	renderToCanvas(QUICK_RENDER_SIZE, seed);
+	if (mode === "grid") {
+		renderToCanvas(OUTPUT_RENDER_SIZE, seed, RENDER_KEYS.quick).catch(
+			(error) => {
+				console.error("Grid render failed", error);
+			}
+		);
+		clearTimeout(supersampleTimeout);
+		supersampleTimeout = undefined;
+		return;
+	}
+
+	renderToCanvas(QUICK_RENDER_SIZE, seed, RENDER_KEYS.quick).catch(
+		(error) => {
+			console.error("Quick render failed", error);
+		}
+	);
 
 	clearTimeout(supersampleTimeout);
 	supersampleTimeout = setTimeout(() => {
-		renderToCanvas(SUPER_SAMPLE_RENDER_SIZE, seed);
+		renderToCanvas(SUPER_SAMPLE_RENDER_SIZE, seed, RENDER_KEYS.supersample)
+			.then(() => {
+				// noop
+			})
+			.catch((error) => {
+				console.error("Supersample render failed", error);
+			});
 	}, SUPER_SAMPLE_DELAY_MS);
 }
 
-function renderToCanvas(size, seed) {
+async function renderToCanvas(size, seed, renderKey) {
 	const scratchCanvas = document.createElement("canvas");
 	scratchCanvas.width = size;
 	scratchCanvas.height = size;
 	const scratchCtx = scratchCanvas.getContext("2d");
+	const activeMode = mode;
+	const activeUsername = username;
+	cancelRender(renderKey);
+	const controller = createAbortController();
+	renderControllers.set(renderKey, controller);
+	const renderOptions = buildRenderOptions(size, controller);
 
-	renderPfp(scratchCtx, size, seed);
+	try {
+		await renderPfp(scratchCtx, size, seed, activeMode, renderOptions);
+	} catch (error) {
+		if (!isAbortError(error)) {
+			throw error;
+		}
+		return;
+	} finally {
+		const trackedController = renderControllers.get(renderKey);
+		if (trackedController === controller) {
+			renderControllers.delete(renderKey);
+		}
+	}
+
+	if (
+		controller.signal.aborted ||
+		activeMode !== mode ||
+		activeUsername !== username
+	) {
+		return;
+	}
 
 	const ctx = canvas.getContext("2d");
 	ctx.imageSmoothingEnabled = true;
 	ctx.imageSmoothingQuality = "high";
-	const applyBlur = mode !== "grid";
-	if (applyBlur) {
-		ctx.filter = `blur(${DOWNSAMPLE_BLUR_PX}px)`;
-	}
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.drawImage(scratchCanvas, 0, 0, canvas.width, canvas.height);
-	if (applyBlur) {
-		ctx.filter = "none";
-	}
+	const shouldBlurPreview = activeMode !== "grid";
 }

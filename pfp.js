@@ -1,5 +1,11 @@
+export const RENDER_ABORTED_ERROR = "RenderAbortedError";
+
 function genColor(rng) {
-	const color = [Math.floor(rng() * 255), Math.floor(rng() * 255), Math.floor(rng() * 255)];
+	const color = [
+		Math.floor(rng() * 255),
+		Math.floor(rng() * 255),
+		Math.floor(rng() * 255),
+	];
 	color.rgb = `rgb(${color[0]},${color[1]},${color[2]})`;
 
 	return color;
@@ -8,7 +14,9 @@ function genColor(rng) {
 class Palette {
 	constructor(rng, paletteSize = 3) {
 		this.rng = rng;
-		this.palette = Array.from({ length: paletteSize }, () => genColor(this.rng));
+		this.palette = Array.from({ length: paletteSize }, () =>
+			genColor(this.rng)
+		);
 	}
 	genColor() {
 		return this.palette[Math.floor(this.rng() * this.palette.length)];
@@ -29,12 +37,33 @@ export function drawGridPfp(ctx, height, width, rng) {
 			const color = palette.genColor();
 
 			ctx.fillStyle = color.rgb;
-			ctx.fillRect(col * cellWidth, row * cellHeight, cellWidth, cellHeight);
+			ctx.fillRect(
+				col * cellWidth,
+				row * cellHeight,
+				cellWidth,
+				cellHeight
+			);
 		}
 	}
 }
 
-export function drawVoronoiPfp(ctx, height, width, rng, mode = 'euclidean') {
+export async function drawVoronoiPfp(
+	ctx,
+	height,
+	width,
+	rng,
+	mode = "euclidean",
+	options = {}
+) {
+	const { asyncRender = true, frameBudgetMs = 50, signal } = options;
+
+	const throwIfAborted = () => {
+		if (signal?.aborted) {
+			const error = new Error("Render aborted");
+			error.name = RENDER_ABORTED_ERROR;
+			throw error;
+		}
+	};
 	const palette = new Palette(rng, 6);
 
 	const points = new Set();
@@ -51,18 +80,37 @@ export function drawVoronoiPfp(ctx, height, width, rng, mode = 'euclidean') {
 	}
 
 	const imageData = ctx.createImageData(width, height);
+	throwIfAborted();
 	const data = new Uint8Array(imageData.data.buffer);
+	const now = () =>
+		typeof performance !== "undefined" && performance.now
+			? performance.now()
+			: Date.now();
+	const yieldToFrame = () =>
+		new Promise((resolve) => {
+			if (typeof requestAnimationFrame === "function") {
+				requestAnimationFrame(resolve);
+			} else {
+				setTimeout(resolve, 0);
+			}
+		});
+	let lastYieldTime = now();
+	const shouldYield = asyncRender;
 
 	// draw voronoi
 	for (let y = 0; y < height; y++) {
+		throwIfAborted();
 		for (let x = 0; x < width; x++) {
+			throwIfAborted();
 			// find closest point
 			let closestPoint = null;
 			let closestPointDistance = null;
 			for (const point of points) {
 				let distance;
-				if (mode === 'euclidean') {
-					distance = Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2);
+				if (mode === "euclidean") {
+					distance = Math.sqrt(
+						(x - point.x) ** 2 + (y - point.y) ** 2
+					);
 				} else {
 					distance = Math.abs(x - point.x) + Math.abs(y - point.y);
 				}
@@ -83,7 +131,15 @@ export function drawVoronoiPfp(ctx, height, width, rng, mode = 'euclidean') {
 				data[pixelIndex + 3] = 255;
 			}
 		}
+
+		if (shouldYield && now() - lastYieldTime >= frameBudgetMs) {
+			lastYieldTime = now();
+			await yieldToFrame();
+			throwIfAborted();
+		}
 	}
+
+	throwIfAborted();
 
 	ctx.putImageData(imageData, 0, 0);
 }
